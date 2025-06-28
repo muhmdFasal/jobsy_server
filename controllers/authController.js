@@ -1,111 +1,80 @@
-// const User = require("../models/User");
-// const bcrypt = require("bcryptjs");
-// const jwt = require("jsonwebtoken");
-
-// exports.signup = async (req, res) => {
-//   try {
-//     const { name, email, password, mobile, role } = req.body;
-
-//     // Check if user already exists
-//     const existing = await User.findOne({ email });
-//     if (existing) return res.status(400).json({ msg: "User already exists" });
-
-//     // Hash password
-//     const hashedPassword = await bcrypt.hash(password, 10);
-
-//     // Create user
-//     const user = await User.create({
-//       name,
-//       email,
-//       password: hashedPassword,
-//       mobile,
-//       role,
-//     });
-
-//     // Generate token
-//     const token = jwt.sign({ id: user._id, role: user.role }, process.env.JWT_SECRET, {
-//       expiresIn: "7d",
-//     });
-
-//     res.status(201).json({
-//       token,
-//       user: {
-//         _id: user._id,
-//         name: user.name,
-//         email: user.email,
-//         mobile: user.mobile,
-//         role: user.role,
-//       },
-//     });
-//   } catch (err) {
-//     console.error("Signup error:", err.message);
-//     res.status(500).json({ msg: err.message });
-//   }
-// };
-
-// exports.login = async (req, res) => {
-//   try {
-//     const { email, password } = req.body;
-
-//     const user = await User.findOne({ email });
-//     if (!user) return res.status(400).json({ msg: "Invalid credentials" });
-
-//     const isMatch = await bcrypt.compare(password, user.password);
-//     if (!isMatch) return res.status(400).json({ msg: "Invalid credentials" });
-
-//     const token = jwt.sign({ id: user._id, role: user.role }, process.env.JWT_SECRET, {
-//       expiresIn: "7d",
-//     });
-
-//     res.json({
-//       token,
-//       user: {
-//         _id: user._id,
-//         name: user.name,
-//         email: user.email,
-//         mobile: user.mobile,
-//         role: user.role,
-//       },
-//     });
-//   } catch (err) {
-//     console.error("Login error:", err.message);
-//     res.status(500).json({ msg: err.message });
-//   }
-// };
-
-
 const User = require("../models/User");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const fs = require("fs");
 const path = require("path");
 
+
 exports.signup = async (req, res) => {
   try {
     const { name, email, password, mobile, role } = req.body;
 
+    // Validate required fields
+    if (!name || !email || !password || !mobile) {
+      return res.status(400).json({ msg: "Please provide all required fields" });
+    }
+
+    // Validate email format
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      return res.status(400).json({ msg: "Please provide a valid email address" });
+    }
+
+    // Validate password length
+    if (password.length < 6) {
+      return res.status(400).json({ msg: "Password must be at least 6 characters long" });
+    }
+
+    // Validate mobile number (basic validation for Indian numbers)
+    const mobileRegex = /^[6-9]\d{9}$/;
+    if (!mobileRegex.test(mobile)) {
+      return res.status(400).json({ msg: "Please provide a valid 10-digit mobile number" });
+    }
+
     // Check if user already exists
-    const existing = await User.findOne({ email });
-    if (existing) return res.status(400).json({ msg: "User already exists" });
+    const existingUser = await User.findOne({ 
+      $or: [{ email }, { mobile }] 
+    });
+    
+    if (existingUser) {
+      if (existingUser.email === email) {
+        return res.status(400).json({ msg: "User with this email already exists" });
+      }
+      if (existingUser.mobile === mobile) {
+        return res.status(400).json({ msg: "User with this mobile number already exists" });
+      }
+    }
 
     // Hash password
-    const hashedPassword = await bcrypt.hash(password, 10);
+    const hashedPassword = await bcrypt.hash(password, 12);
+
+    // Map frontend role to backend role
+    let userRole = "user"; // default
+    if (role === "fresher" || role === "experienced") {
+      userRole = "user";
+    } else if (role === "admin") {
+      userRole = "admin";
+    }
 
     // Create user
     const user = await User.create({
-      name,
-      email,
+      name: name.trim(),
+      email: email.toLowerCase().trim(),
       password: hashedPassword,
-      mobile,
-      role,
+      mobile: mobile.trim(),
+      role: userRole,
     });
 
     // Generate token
-    const token = jwt.sign({ id: user._id, role: user.role }, process.env.JWT_SECRET, {
-      expiresIn: "7d",
-    });
+    const token = jwt.sign(
+      { id: user._id, role: user.role }, 
+      process.env.JWT_SECRET, 
+      { expiresIn: "7d" }
+    );
 
     res.status(201).json({
+      success: true,
+      msg: "User registered successfully",
       token,
       user: {
         _id: user._id,
@@ -119,8 +88,21 @@ exports.signup = async (req, res) => {
       },
     });
   } catch (err) {
-    console.error("Signup error:", err.message);
-    res.status(500).json({ msg: err.message });
+    console.error("Signup error:", err);
+    
+    // Handle mongoose validation errors
+    if (err.name === 'ValidationError') {
+      const messages = Object.values(err.errors).map(error => error.message);
+      return res.status(400).json({ msg: messages.join(', ') });
+    }
+    
+    // Handle duplicate key errors
+    if (err.code === 11000) {
+      const field = Object.keys(err.keyValue)[0];
+      return res.status(400).json({ msg: `${field} already exists` });
+    }
+    
+    res.status(500).json({ msg: "Server error. Please try again later." });
   }
 };
 

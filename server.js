@@ -10,15 +10,19 @@ const app = express();
 connectDB();
 
 // Middleware
-app.use(cors());
+// app.use(cors());
+
+app.use(cors({
+  origin: ["http://localhost:5173", "http://localhost:5174"], // Add your frontend URLs
+  credentials: true
+}));
+
 app.use(express.json());
 app.use("/uploads", express.static("uploads")); // Serve uploaded images
 
 // Routes
 app.use("/api/auth", require("./routes/auth"));
-// app.use("/api/users", require("./routes/users"));
-app.use("/api/posts", require("./routes/posts")); // ✅ Must exist
-// ✅ Include posts route
+app.use("/api/posts", require("./routes/posts")); 
 
 // Health check endpoint
 app.get("/", (req, res) => {
