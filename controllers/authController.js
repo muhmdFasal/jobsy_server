@@ -48,13 +48,16 @@ exports.signup = async (req, res) => {
     // Hash password
     const hashedPassword = await bcrypt.hash(password, 12);
 
-    // Map frontend role to backend role
-    let userRole = "user"; // default
-    if (role === "fresher" || role === "experienced") {
-      userRole = "user";
-    } else if (role === "admin") {
-      userRole = "admin";
-    }
+
+// Map frontend role to backend role
+let userRole = "user"; // default
+if (role === "fresher" || role === "experienced") {
+  userRole = "user";
+// } else if (role === "admin") {
+//   userRole = "admin";
+} else if (role === "company") {
+  userRole = "company"; // ✅ NEW LINE: allows company TPOs to manage jobs
+}
 
     // Create user
     const user = await User.create({
@@ -255,5 +258,47 @@ exports.getProfile = async (req, res) => {
   } catch (err) {
     console.error("Get profile error:", err.message);
     res.status(500).json({ msg: err.message });
+  }
+};
+
+
+
+// Get all users (admin only)
+exports.getAllUsers = async (req, res) => {
+  try {
+    const users = await User.find().select("-password"); // omit passwords
+    res.json(users);
+  } catch (err) {
+    console.error("Error fetching users:", err);
+    res.status(500).json({ message: "Server error" });
+  }
+};
+
+// Get own profile
+exports.getOwnProfile = async (req, res) => {
+  try {
+    const user = await User.findById(req.user.id).select("-password");
+    res.json(user);
+  } catch (err) {
+    console.error("Error fetching user:", err);
+    res.status(500).json({ message: "Server error" });
+  }
+};
+
+// Delete a user by ID (admin only)
+exports.deleteUser = async (req, res) => {
+  try {
+    const userId = req.params.id;
+
+    const deletedUser = await User.findByIdAndDelete(userId);
+
+    if (!deletedUser) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    res.json({ message: "User deleted successfully" });
+  } catch (err) {
+    console.error("Error deleting user:", err);
+    res.status(500).json({ message: "Server error" });
   }
 };
