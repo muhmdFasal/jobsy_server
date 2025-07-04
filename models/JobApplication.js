@@ -11,7 +11,10 @@ const applicationSchema = new mongoose.Schema({
     ref: "User",
     required: true,
   },
-  resume: String, // optional
+  resume: {
+    type: String,
+    required: true,
+  },
   appliedAt: {
     type: Date,
     default: Date.now,

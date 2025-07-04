@@ -1,14 +1,14 @@
 const express = require("express");
 const router = express.Router();
 const Post = require("../models/Post");
-const upload = require("../middleware/Upload");
-const authMiddleware = require("../middleware/authMiddleware");
+const {upload}= require("../middleware/Upload");
 const fs = require("fs");
 const path = require("path");
+const authMiddleware = require("../middleware/AuthMiddleware");
 
 
 // Ensure uploads folder exists
-const uploadsDir = path.join(__dirname, "..", "uploads");
+const uploadsDir = path.join(__dirname, "../uploads");
 if (!fs.existsSync(uploadsDir)) {
   fs.mkdirSync(uploadsDir);
 }

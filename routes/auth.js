@@ -39,8 +39,8 @@ const {
 } = require("../controllers/authController");
 
 const adminMiddleware = require("../middleware/isAdmin");
-const upload = require("../middleware/Upload");
 const authMiddleware = require("../middleware/AuthMiddleware");
+const { upload } = require("../middleware/Upload");
 
 // Auth & Profile Routes
 router.post("/signup", signup);
@@ -50,8 +50,8 @@ router.put("/edit-profile", authMiddleware, upload.single("image"), editProfile)
 
 // User Management Routes
 router.get("/", authMiddleware, adminMiddleware, getAllUsers);
-router.get("/me", authMiddleware, getOwnProfile); // ✅ Removed admin check
-router.delete("/:id", authMiddleware, adminMiddleware, deleteUser); // ✅ Added delete route
+router.get("/me", authMiddleware, getOwnProfile); 
+router.delete("/:id", authMiddleware, adminMiddleware, deleteUser);
 
 module.exports = router;
 

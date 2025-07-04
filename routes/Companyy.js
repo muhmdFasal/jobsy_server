@@ -1,7 +1,6 @@
 
 const express = require("express");
 const router = express.Router();
-const upload = require("../middleware/Upload");
 
 const authMiddleware = require("../middleware/AuthMiddleware");
 const adminMiddleware = require("../middleware/isAdmin");
@@ -12,6 +11,7 @@ const {
   deleteCompany,
   updateCompany, 
 } = require("../controllers/companyController");
+const { upload } = require("../middleware/Upload");
 
 // GET all companies (admin only)
 router.get("/", authMiddleware, adminMiddleware, getAllCompanies);

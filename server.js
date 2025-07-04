@@ -3,6 +3,7 @@ const dotenv = require("dotenv");
 const cors = require("cors");
 const connectDB = require("./config/db");
 
+
 dotenv.config();
 const app = express();
 
@@ -22,6 +23,7 @@ app.use("/api/auth", require("./routes/auth"));
 app.use("/api/posts", require("./routes/posts")); 
 app.use("/api/jobs", require("./routes/jobRoutes"));
 app.use("/api/companies", require("./routes/Companyy"));
+app.use("/api/applications", require("./routes/applicationRoutes"));
 
 // Health check endpoint
 app.get("/", (req, res) => {
