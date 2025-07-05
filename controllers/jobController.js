@@ -86,3 +86,18 @@ exports.deleteJob = async (req, res) => {
     res.status(500).json({ message: "Server error" });
   }
 };
+
+// GET all jobs by the logged-in company
+exports.getJobsByCompany = async (req, res) => {
+  try {
+    if (req.user.role !== "company") {
+      return res.status(403).json({ message: "Only company users can view this" });
+    }
+
+    const jobs = await Job.find({ company: req.user._id }).sort({ createdAt: -1 });
+    res.json(jobs);
+  } catch (err) {
+    console.error("Error fetching company's jobs:", err);
+    res.status(500).json({ message: "Server error" });
+  }
+};

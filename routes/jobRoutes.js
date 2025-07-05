@@ -7,7 +7,9 @@ const {
   getAllActiveJobs,
   updateJob,
   deleteJob,
+  getJobsByCompany,
 } = require("../controllers/jobController");
+router.get("/company", auth, getJobsByCompany);
 
 router.get("/active", getAllActiveJobs);
 

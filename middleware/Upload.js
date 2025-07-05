@@ -41,9 +41,7 @@ const upload = multer({
 
 // Resume storage
 const resumeStorage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    cb(null, uploadPath);
-  },
+  destination: (req, file, cb) => cb(null, uploadPath),
   filename: (req, file, cb) => {
     const ext = path.extname(file.originalname);
     const uniqueName = "resume_" + Date.now() + ext;
@@ -51,16 +49,18 @@ const resumeStorage = multer.diskStorage({
   },
 });
 
-// Resume file filter
+// Resume file filter (validate by MIME type, not extension only)
 const resumeFileFilter = (req, file, cb) => {
-  const allowedTypes = /pdf|doc|docx/;
-  const ext = path.extname(file.originalname).toLowerCase();
-  const mime = file.mimetype;
+  const allowedMimes = [
+    "application/pdf",
+    "application/msword",
+    "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+  ];
 
-  if (allowedTypes.test(ext) && allowedTypes.test(mime)) {
+  if (allowedMimes.includes(file.mimetype)) {
     cb(null, true);
   } else {
-    cb(new Error("Only resume files are allowed (.pdf, .doc, .docx)"));
+    cb(new Error("Only .pdf, .doc, .docx files allowed!"));
   }
 };
 
@@ -68,13 +68,11 @@ const resumeFileFilter = (req, file, cb) => {
 const uploadResume = multer({
   storage: resumeStorage,
   fileFilter: resumeFileFilter,
-  limits: { fileSize: 10 * 1024 * 1024 }, // 10MB
+  limits: { fileSize: 10 * 1024 * 1024 },
 });
 
 
-// module.exports = upload, uploadResume;
-
 module.exports = {
-  upload,        // for image uploads
-  uploadResume,  // for resume uploads
+  upload, // for image uploads
+  uploadResume, // for resume uploads
 };
